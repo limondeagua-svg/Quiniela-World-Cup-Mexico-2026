@@ -15,7 +15,7 @@ def cargar_y_limpiar_datos():
     # 1. Buscamos la fila de encabezados reales de la familia
     df_crudo = pd.read_excel(archivo_ruta, header=None)
     
-    participantes_validos = ['David', 'Teté', 'Paty', 'SAM', 'Yaya', 'Yayo', 'Fer Marin', 'Jorge']
+    participantes_validos = ['David', 'Teté', 'Paty', 'SAM', 'Yaya', 'Yayo', 'Fer Marin', 'JORGE', 'Ivan', 'Brenda', 'Armandin']
     fila_encabezados = 3  # Por defecto fila 4 (índice 3 en Python)
     
     for idx, fila in df_crudo.head(10).iterrows():
