@@ -28,6 +28,8 @@ archivo = 'quiniela_actualizada_2026.xlsx'
 try:
     # Ajustado al nombre real de la hoja encontrada en el archivo: 'FIFA WORLD CUP MEXICO 2026'
     df = pd.read_excel(archivo, sheet_name='FIFA WORLD CUP MEXICO 2026', header=None, dtype=str)
+    # Añade esto en la línea 28:
+    st.write("Datos leídos por el programa (fila de puntos):", df.iloc[2, 9:].tolist())
     
     # Ajusta los índices de filas y columnas según la estructura de tu archivo familiar
     nombres = df.iloc[1, 9:].tolist()
