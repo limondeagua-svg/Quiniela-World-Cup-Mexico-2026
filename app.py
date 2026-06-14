@@ -33,8 +33,8 @@ try:
     # Nombres en la fila índice 1 (Fila 2 de Excel)
     # Puntos en la fila índice 2 (Fila 3 de Excel)
     # Empezando desde la columna índice 8 (Columna I de Excel)
-    nombres = df.iloc[1, 8:].tolist()
-    puntos = df.iloc[2, 8:].tolist()
+    nombres = df.iloc[1, 7:].tolist()
+    puntos = df.iloc[2, 7:].tolist()
     
     datos = []
     for n, p in zip(nombres, puntos):
