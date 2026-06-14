@@ -22,11 +22,11 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# NOMBRE DEL ARCHIVO EN TU REPOSITORIO
-archivo = 'QUINIELA WORLD CUP MEXICO 2026 FINAL.xlsx'
+# NOMBRE EXACTO ACORDADO
+archivo = 'quiniela_actualizada_2026.xlsx'
 
 try:
-    # Cargamos el Excel indicando la hoja correcta
+    # Cargamos el Excel
     df = pd.read_excel(archivo, sheet_name='FIFA WORLD CUP MEXICO 2026', header=None, dtype=str)
     
     # AJUSTE DE POSICIÓN SEGÚN TU IMAGEN:
@@ -39,7 +39,6 @@ try:
     datos = []
     for n, p in zip(nombres, puntos):
         nombre_limpio = str(n).strip()
-        # Convertimos a numérico, manejando posibles celdas vacías o nulas
         try:
             punto_limpio = int(float(p))
         except:
@@ -54,9 +53,10 @@ try:
     st.title("🏆 QUINIELA FAMILIAR - WORLD CUP 2026")
     st.markdown("---")
     
-    # PODIO JERÁRQUICO
+    # PODIO
     c1, c2, c3 = st.columns(3)
     
+    # 1er Lugar
     c1.markdown(f"""
         <div class='podium-card'>
             <div style='font-size: 14px; color: #FFD700;'>🥇 1ER LUGAR</div>
@@ -65,6 +65,7 @@ try:
         </div>
     """, unsafe_allow_html=True)
     
+    # 2do Lugar
     c2.markdown(f"""
         <div class='podium-card'>
             <div style='font-size: 14px; color: #C0C0C0;'>🥈 2DO LUGAR</div>
@@ -73,6 +74,7 @@ try:
         </div>
     """, unsafe_allow_html=True)
     
+    # 3er Lugar
     c3.markdown(f"""
         <div class='podium-card'>
             <div style='font-size: 14px; color: #CD7F32;'>🥉 3ER LUGAR</div>
