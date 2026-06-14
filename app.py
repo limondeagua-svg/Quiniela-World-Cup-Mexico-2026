@@ -1,45 +1,51 @@
-import streamlit as st
-import pandas as pd
-import plotly.express as px
-
-# 1. Configuración de la página
-st.set_page_config(page_title="Quiniela Mundial 2026", layout="wide", page_icon="🏆")
-
-st.title("🏆 Quiniela Familiar - Mundial 2026")
-st.markdown("---")
-
-# 2. Carga del archivo Excel
-archivo = 'QUINIELA WORLD CUP MEXICO 2026 FINAL.xlsx'
-
 try:
-    # Leemos la hoja correspondiente
+    # Leemos la hoja correspondiente sin procesar encabezados aún
     df_excel = pd.read_excel(archivo, sheet_name='FIFA WORLD CUP MEXICO 2026', header=None)
     
-    # 3. EXTRACCIÓN DINÁMICA DE PARTICIPANTES Y PUNTOS
-    # Los nombres están en la fila 0 (Fila 1 de Excel), desde la columna 7 (columna H) en adelante
-    nombres = df_excel.iloc[0, 7:].dropna().tolist()
+    # 1. BUSCAMOS LA FILA DE LOS NOMBRES
+    # Buscamos en qué fila está "Paty" para saber que ahí empiezan los participantes
+    fila_nombres = None
+    for i in range(len(df_excel)):
+        if "Paty" in df_excel.iloc[i].values:
+            fila_nombres = i
+            break
+            
+    if fila_nombres is None:
+        # Si no encuentra "Paty", usamos la fila 0 por defecto
+        fila_nombres = 0
+
+    # Extraemos los nombres limpitos desde la columna H (índice 7)
+    fila_nombres_datos = df_excel.iloc[fila_nombres, 7:].dropna().tolist()
+    # Limpiamos los nombres por si tienen números como "1/David" -> dejamos solo "David"
+    nombres = [str(n).split('/')[-1].strip() for n in fila_nombres_datos if str(n).strip() != '']
     cant_participantes = len(nombres)
     
-    # Los puntos acumulados están en la fila 1 (Fila 2 de Excel), justo debajo de los nombres
-    puntos = df_excel.iloc[1, 7:7+cant_participantes].tolist()
+    # 2. BUSCAMOS LA FILA DE LOS PUNTOS TOTALES
+    # Buscamos la fila que está justo debajo de los nombres (fila 2 del excel habitual)
+    # Si esa fila contiene los puntos acumulados actuales:
+    fila_puntos = fila_nombres + 1
+    puntos_raw = df_excel.iloc[fila_puntos, 7:7+cant_participantes].tolist()
     
-    # Convertimos los puntos a números enteros por si acaso
-    puntos = [int(p) if pd.notna(p) else 0 for p in puntos]
-    
-    # Creamos un DataFrame limpio solo con las posiciones actuales
+    # Convertimos a número de forma segura. Si encuentra texto, lo convierte en 0 para que no rompa
+    puntos = []
+    for p in puntos_raw:
+        try:
+            puntos.append(int(float(p))) if pd.notna(p) else puntos.append(0)
+        except ValueError:
+            puntos.append(0) # Si era una palabra como 'Paty', le pone 0 puntos temporalmente
+            
+    # 3. CREAMOS EL DATAFRAME DE POSICIONES
     df_posiciones = pd.DataFrame({
         'Participante': nombres,
         'Puntos': puntos
     }).sort_values(by='Puntos', ascending=False).reset_index(drop=True)
     
-    # 4. LÓGICA DE DETECCIÓN DEL LÍDER (IMPLEMENTACIÓN NUEVA #1)
+    # 4. LÓGICA DE DETECCIÓN DEL LÍDER
     id_max = df_posiciones['Puntos'].idxmax()
     lider_actual = df_posiciones.loc[id_max, 'Participante']
     puntos_lider = df_posiciones.loc[id_max, 'Puntos']
     
     # 5. DISEÑO DE INTERFAZ EN STREAMLIT
-    
-    # Tarjetas de Métricas Destacadas
     st.subheader("📊 Estado del Campeonato")
     col1, col2, col3 = st.columns(3)
     
@@ -52,12 +58,11 @@ try:
         
     st.markdown("---")
     
-    # Distribución en dos columnas para los Datos y la Gráfica
+    # Distribución de pantallas
     col_tabla, col_grafica = st.columns([1, 1.2])
     
     with col_tabla:
         st.subheader("📋 Tabla de Posiciones")
-        # Mostramos la tabla limpia y estilizada
         st.dataframe(
             df_posiciones, 
             use_container_width=True,
@@ -68,7 +73,6 @@ try:
         
     with col_grafica:
         st.subheader("📊 Rendimiento General")
-        # Gráfica de barras usando Plotly (IMPLEMENTACIÓN NUEVA #2)
         fig = px.bar(
             df_posiciones, 
             x='Participante', 
@@ -83,13 +87,11 @@ try:
         
     st.markdown("---")
     
-    # Vista del Excel completo por si quieren verificar sus apuestas individuales
     with st.expander("🔍 Ver Matriz Completa de la Quiniela (Datos del Excel)"):
-        # Mostramos el archivo tal cual viene, saltando las primeras filas decorativas si es necesario
         df_completo = pd.read_excel(archivo, sheet_name='FIFA WORLD CUP MEXICO 2026')
         st.dataframe(df_completo)
 
 except FileNotFoundError:
-    st.error(f"❌ No se encontró el archivo '{archivo}' en tu repositorio de GitHub. Revisa que el nombre coincida perfectamente.")
+    st.error(f"❌ No se encontró el archivo '{archivo}' en tu repositorio de GitHub.")
 except Exception as e:
     st.error(f"⚡ Ocurrió un error al procesar el archivo: {e}")
