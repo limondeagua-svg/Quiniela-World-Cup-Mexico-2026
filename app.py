@@ -2,133 +2,100 @@ import streamlit as st
 import pandas as pd
 import plotly.express as px
 
-# 1. Configuración de la página
-st.set_page_config(page_title="Quiniela Mundial 2026", layout="wide", page_icon="🏆")
+# Configuración de página amplia para diseño profesional
+st.set_page_config(layout="wide", page_title="World Cup 2026 - Analytics")
 
-# APLICACIÓN DE ESTILO PREMIUM: Fondo negro y letras doradas (Gold & Black Theme)
-st.markdown(
-    """
+# ESTILO CSS (Modo Oscuro Corporativo)
+st.markdown("""
     <style>
-    /* Fondo principal de la app */
-    .stApp {
-        background-color: #0E1117;
-        color: #FFFFFF;
-    }
-    /* Títulos principales en Dorado */
-    h1, h2, h3, .stMarkdown p strong {
-        color: #FFD700 !important;
-        font-family: 'Georgia', serif;
-    }
-    /* Estilo personalizado para las tarjetas de métricas */
-    .metric-box {
-        background-color: #1A1C23;
-        border: 2px solid #FFD700;
-        padding: 15px;
-        border-radius: 10px;
-        text-align: center;
-        box-shadow: 0px 4px 10px rgba(255, 215, 0, 0.15);
-    }
-    .metric-title {
-        color: #AAAAAA;
-        font-size: 14px;
-        margin-bottom: 5px;
-    }
-    .metric-value {
-        color: #FFD700;
-        font-size: 24px;
-        font-weight: bold;
-    }
+        .stApp { background-color: #0e1117; }
+        .metric-card {
+            background-color: #1c1f26;
+            border: 1px solid #FFD700;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            color: #FFD700;
+            height: 150px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+        .metric-title { font-size: 14px; color: #aaa; margin-bottom: 10px; }
+        h1, h2 { color: #FFD700; }
+        .stTable { color: white; }
     </style>
-    """,
-    unsafe_allow_html=True
-)
+""", unsafe_allow_html=True)
 
-st.title("🏆 QUINIELA FAMILIAR - WORLD CUP 2026")
-st.markdown("---")
-
-archivo = 'QUINIELA WORLD CUP MEXICO 2026 FINAL.xlsx'
+# CARGA DE DATOS
+archivo = 'Copa del Mundo-2026 trabajo.xlsx'
 
 try:
-    # Leemos el Excel usando la fila 1 como encabezado
-    df_excel = pd.read_excel(archivo, sheet_name='FIFA WORLD CUP MEXICO 2026', header=1)
+    df = pd.read_excel(archivo, sheet_name='FIFA 2026', header=None, dtype=str)
+    nombres = df.iloc[1, 9:].tolist()
+    puntos = df.iloc[2, 9:].tolist()
     
-    nombres_finales = []
-    puntos_finales = []
-    
-    # Lista de tus 11 participantes reales
-    participantes_reales = ['Paty', 'Fer Marin', 'Armandin', 'Yayo', 'David', 'SAM', 'Yaya', 'JORGE', 'Teté', 'Ivan', 'Brenda']
-    
-    for col in df_excel.columns:
-        if any(p == str(col) for p in participantes_reales):
-            nombres_finales.append(str(col))
-            valor_puntos = df_excel.loc[0, col]
-            puntos_finales.append(int(valor_puntos) if pd.notna(valor_puntos) else 0)
+    datos = []
+    for n, p in zip(nombres, puntos):
+        nombre_limpio = str(n).strip()
+        punto_limpio = int(p) if str(p).isdigit() else 0
+        if nombre_limpio and nombre_limpio != 'nan':
+            datos.append({'Participante': nombre_limpio, 'Puntos': punto_limpio})
+            
+    df_ranking = pd.DataFrame(datos).sort_values(by='Puntos', ascending=False).reset_index(drop=True)
+    df_ranking.index += 1
 
-    # 2. Creamos el DataFrame de posiciones ordenadas
-    df_posiciones = pd.DataFrame({
-        'Participante': nombres_finales,
-        'Puntos': puntos_finales
-    }).sort_values(by='Puntos', ascending=False).reset_index(drop=True)
-    
-    # CORRECCIÓN DE LA FOTO 1: Hacer que el índice empiece en 1 en lugar de 0
-    df_posiciones.index = df_posiciones.index + 1
-    df_posiciones.index.name = 'Lugar'
-    
-    # Identificamos al líder real desde la posición 1
-    lider_actual = df_posiciones.iloc[0]['Participante']
-    puntos_lider = df_posiciones.iloc[0]['Puntos']
-    cant_participantes = len(df_posiciones)
-    
-    # 3. INTERFAZ VISUAL EN TARJETAS NEGRAS CON BORDE DORADO
-    st.subheader("📊 Estado del Campeonato")
-    col1, col2, col3 = st.columns(3)
-    
-    with col1:
-        st.markdown(f'<div class="metric-box"><div class="metric-title">👑 Líder de la Quiniela</div><div class="metric-value">{lider_actual}</div></div>', unsafe_allow_html=True)
-    with col2:
-        st.markdown(f'<div class="metric-box"><div class="metric-title">📈 Puntaje Máximo</div><div class="metric-value">{puntos_lider} pts</div></div>', unsafe_allow_html=True)
-    with col3:
-        st.markdown(f'<div class="metric-box"><div class="metric-title">👥 Participantes Activos</div><div class="metric-value">{cant_participantes} Jugadores</div></div>', unsafe_allow_html=True)
-        
+    # TÍTULO PROFESIONAL
+    st.title("🏢 World Cup 2026: Leaderboard & Analytics")
+    st.markdown("**Reporte actualizado al: 13 de junio de 2026** | *Gestión de métricas: Departamento de Operaciones*")
     st.markdown("---")
     
-    # Distribución en pantalla (Tabla izquierda, Gráfica derecha)
-    col_tabla, col_grafica = st.columns([1, 1.2])
+    # TARJETAS DEL PODIO (Jerarquía 1ro, 2do y 3ro con tamaños ajustados)
+    c1, c2, c3 = st.columns(3)
     
-    with col_tabla:
+    # 1er Lugar - El más grande (35px)
+    c1.markdown(f"""
+        <div class='metric-card'>
+            <div class='metric-title'>🥇 1ER LUGAR</div>
+            <div style='font-size: 35px; font-weight: 800; color: #FFD700; line-height: 1.1;'>{df_ranking.iloc[0]['Participante']}</div>
+            <div style='color: #fff; font-size: 16px; margin-top: 5px;'>{df_ranking.iloc[0]['Puntos']} pts</div>
+        </div>
+    """, unsafe_allow_html=True)
+    
+    # 2do Lugar - Mediano (28px)
+    c2.markdown(f"""
+        <div class='metric-card'>
+            <div class='metric-title'>🥈 2DO LUGAR</div>
+            <div style='font-size: 28px; font-weight: 700; color: #E0E0E0; line-height: 1.1;'>{df_ranking.iloc[1]['Participante']}</div>
+            <div style='color: #fff; font-size: 16px; margin-top: 5px;'>{df_ranking.iloc[1]['Puntos']} pts</div>
+        </div>
+    """, unsafe_allow_html=True)
+    
+    # 3er Lugar - Más pequeño (20px)
+    c3.markdown(f"""
+        <div class='metric-card'>
+            <div class='metric-title'>🥉 3ER LUGAR</div>
+            <div style='font-size: 20px; font-weight: 600; color: #CD7F32; line-height: 1.1;'>{df_ranking.iloc[2]['Participante']}</div>
+            <div style='color: #fff; font-size: 16px; margin-top: 5px;'>{df_ranking.iloc[2]['Puntos']} pts</div>
+        </div>
+    """, unsafe_allow_html=True)
+
+    st.markdown("<br>", unsafe_allow_html=True)
+
+    # TABLA Y GRÁFICA
+    col_tab, col_graf = st.columns([1, 2])
+    
+    with col_tab:
         st.subheader("📋 Tabla de Posiciones")
-        # Mostramos la tabla con los índices corregidos (1, 2, 3...)
-        st.dataframe(
-            df_posiciones, 
-            use_container_width=True,
-            column_config={
-                "Puntos": st.column_config.NumberColumn("Aciertos Totales", format="%d ⭐")
-            }
-        )
+        st.dataframe(df_ranking.rename(columns={'Puntos': 'Aciertos Totales'}), use_container_width=True, hide_index=True)
         
-    with col_grafica:
+    with col_graf:
         st.subheader("📊 Rendimiento General")
-        # Gráfica de barras adaptada al nuevo estilo oscuro/dorado
-        fig = px.bar(
-            df_posiciones.reset_index(), 
-            x='Participante', 
-            y='Puntos',
-            color='Puntos',
-            color_continuous_scale=['#4A3B00', '#FFD700'], # Degradado de dorado oscuro a brillante
-            text='Puntos'
-        )
-        fig.update_layout(
-            paper_bgcolor='#0E1117',
-            plot_bgcolor='#1A1C23',
-            font_color='#FFFFFF',
-            xaxis_title="Jugadores", 
-            yaxis_title="Puntos", 
-            showlegend=False
-        )
-        fig.update_traces(textposition='outside', marker_line_color='#FFD700', marker_line_width=1.5)
+        fig = px.bar(df_ranking, x='Participante', y='Puntos', color='Puntos',
+                     color_continuous_scale=['#4d3d00', '#FFD700'])
+        fig.update_layout(plot_bgcolor='rgba(0,0,0,0)', paper_bgcolor='rgba(0,0,0,0)',
+                          font_color="white", showlegend=False)
         st.plotly_chart(fig, use_container_width=True)
 
-except FileNotFoundError:
-    st.error(f"❌ No se encontró el archivo '{archivo}' en tu repositorio de GitHub.")
 except Exception as e:
-    st.error(f"⚡ Ocurrió un error inesperado: {e}")
+    st.error("Error al cargar los datos. Verifica la ruta del archivo Excel en el repositorio.")
