@@ -2,7 +2,6 @@ import streamlit as st
 import pandas as pd
 import plotly.express as px
 
-# Configuración de página
 st.set_page_config(layout="wide", page_title="Quiniela Familiar 2026")
 
 # ESTILO CSS
@@ -23,12 +22,14 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# NOMBRE EXACTO DEL ARCHIVO EN TU REPOSITORIO
-archivo = 'quiniela_world_cup_mexico_2026.xlsx'
+# Nombre del archivo tal como aparece en tu repositorio
+archivo = 'QUINIELA WORLD CUP MEXICO 2026 FINAL.xlsx'
 
 try:
-    # Cargamos el Excel
-    df = pd.read_excel(archivo, sheet_name='FIFA 2026', header=None, dtype=str)
+    # Ajustado al nombre real de la hoja encontrada en el archivo: 'FIFA WORLD CUP MEXICO 2026'
+    df = pd.read_excel(archivo, sheet_name='FIFA WORLD CUP MEXICO 2026', header=None, dtype=str)
+    
+    # Ajusta los índices de filas y columnas según la estructura de tu archivo familiar
     nombres = df.iloc[1, 9:].tolist()
     puntos = df.iloc[2, 9:].tolist()
     
@@ -48,7 +49,7 @@ try:
     # PODIO JERÁRQUICO
     c1, c2, c3 = st.columns(3)
     
-    # 1er Lugar (Grande)
+    # 1er Lugar
     c1.markdown(f"""
         <div class='podium-card'>
             <div style='font-size: 14px; color: #FFD700;'>🥇 1ER LUGAR</div>
@@ -57,7 +58,7 @@ try:
         </div>
     """, unsafe_allow_html=True)
     
-    # 2do Lugar (Mediano)
+    # 2do Lugar
     c2.markdown(f"""
         <div class='podium-card'>
             <div style='font-size: 14px; color: #C0C0C0;'>🥈 2DO LUGAR</div>
@@ -66,7 +67,7 @@ try:
         </div>
     """, unsafe_allow_html=True)
     
-    # 3er Lugar (Pequeño)
+    # 3er Lugar
     c3.markdown(f"""
         <div class='podium-card'>
             <div style='font-size: 14px; color: #CD7F32;'>🥉 3ER LUGAR</div>
@@ -93,4 +94,4 @@ try:
         st.plotly_chart(fig, use_container_width=True)
 
 except Exception as e:
-    st.error(f"Error al cargar el archivo: {e}")
+    st.error(f"Error al cargar la hoja: {e}")
