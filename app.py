@@ -1,4 +1,3 @@
-import streamlit as pd
 import streamlit as st
 import pandas as pd
 import plotly.express as px
@@ -12,53 +11,35 @@ st.markdown("---")
 archivo = 'QUINIELA WORLD CUP MEXICO 2026 FINAL.xlsx'
 
 try:
-    # Leemos la hoja directo desde la fila de los nombres (Fila 1 del Excel es índice 0)
-    df_excel = pd.read_excel(archivo, sheet_name='FIFA WORLD CUP MEXICO 2026', header=None)
+    # Leemos el Excel usando la fila 1 como el encabezado real (donde están Paty, Fer, David...)
+    df_excel = pd.read_excel(archivo, sheet_name='FIFA WORLD CUP MEXICO 2026', header=1)
     
-    # Listas para guardar la información limpia
-    nombres_limpios = []
-    puntos_limpios = []
+    # Lista exacta de tus 11 participantes reales
+    participantes_reales = ['Paty', 'Fer Marin', 'Armandin', 'Yayo', 'David', 'SAM', 'Yaya', 'JORGE', 'Teté', 'Ivan', 'Brenda']
     
-    # Tu Excel tiene los nombres en la fila 0, desde la columna H (índice 7) en adelante
-    # Vamos a recorrer las columnas de la 7 a la 31 (las 25 columnas de participantes potenciales)
-    for col_idx in range(7, 32):
-        nombre_celda = df_excel.iloc[0, col_idx]
-        puntos_celda = df_excel.iloc[1, col_idx]
-        
-        # Si la celda del nombre no está vacía y no dice 'nombre' de relleno
-        if pd.notna(nombre_celda) and str(nombre_celda).strip() != '' and 'nombre' not in str(nombre_celda).lower():
-            # Limpiamos el nombre por si trae formato "1/David" -> dejamos solo "David"
-            nombre_final = str(nombre_celda).split('/')[-1].strip()
-            nombres_limpios.append(nombre_final)
-            
-            # Validamos los puntos de manera segura
-            try:
-                if pd.notna(puntos_celda):
-                    puntos_limpios.append(int(float(puntos_celda)))
-                else:
-                    puntos_limpios.append(0)
-            except ValueError:
-                puntos_limpios.append(0) # Si hay texto por error en los puntos, le asigna 0
+    # Extraemos los nombres y sus respectivos puntos (que están en la primera fila de datos, índice 0)
+    nombres_finales = []
+    puntos_finales = []
+    
+    for nombre in participantes_reales:
+        if nombre in df_excel.columns:
+            nombres_finales.append(nombre)
+            # El valor de los aciertos está en la fila 0 de los datos de esa columna
+            valor_puntos = df_excel.loc[0, nombre]
+            puntos_finales.append(int(valor_puntos) if pd.notna(valor_puntos) else 0)
 
-    # 2. CREAMOS EL DATAFRAME DE POSICIONES
-    if len(nombres_limpios) > 0:
-        df_posiciones = pd.DataFrame({
-            'Participante': nombres_limpios,
-            'Puntos': puntos_limpios
-        }).sort_values(by='Puntos', ascending=False).reset_index(drop=True)
-        
-        # Definimos al líder de forma segura
-        lider_actual = df_posiciones.loc[0, 'Participante']
-        puntos_lider = df_posiciones.loc[0, 'Puntos']
-        cant_participantes = len(df_posiciones)
-    else:
-        # Valores de respaldo por si el Excel viene totalmente vacío
-        df_posiciones = pd.DataFrame(columns=['Participante', 'Puntos'])
-        lider_actual = "Nadie aún"
-        puntos_lider = 0
-        cant_participantes = 0
+    # 2. Creamos el DataFrame de posiciones ordenadas de mayor a menor
+    df_posiciones = pd.DataFrame({
+        'Participante': nombres_finales,
+        'Puntos': puntos_finales
+    }).sort_values(by='Puntos', ascending=False).reset_index(drop=True)
     
-    # 3. DISEÑO DE INTERFAZ EN STREAMLIT
+    # Identificamos al líder real y los datos clave
+    lider_actual = df_posiciones.loc[0, 'Participante']
+    puntos_lider = df_posiciones.loc[0, 'Puntos']
+    cant_participantes = len(df_posiciones)
+    
+    # 3. INTERFAZ VISUAL EN STREAMLIT (Tarjetas profesionales)
     st.subheader("📊 Estado del Campeonato")
     col1, col2, col3 = st.columns(3)
     
@@ -67,47 +48,38 @@ try:
     with col2:
         st.metric(label="📈 Puntaje Máximo", value=f"{puntos_lider} pts")
     with col3:
-        st.metric(label="👥 Participantes Activos", value=cant_participantes)
+        st.metric(label="👥 Participantes Activos", value=f"{cant_participantes} Jugadores")
         
     st.markdown("---")
     
-    # Distribución de pantallas (Tabla a la izquierda, Gráfica a la derecha)
-    if cant_participantes > 0:
-        col_tabla, col_grafica = st.columns([1, 1.2])
-        
-        with col_tabla:
-            st.subheader("📋 Tabla de Posiciones")
-            st.dataframe(
-                df_posiciones, 
-                use_container_width=True,
-                column_config={
-                    "Puntos": st.column_config.NumberColumn("Puntos Totales", format="%d ⭐")
-                }
-            )
-            
-        with col_grafica:
-            st.subheader("📊 Rendimiento General")
-            fig = px.bar(
-                df_posiciones, 
-                x='Participante', 
-                y='Puntos',
-                color='Puntos',
-                color_continuous_scale='Viridis',
-                text='Puntos'
-            )
-            fig.update_layout(xaxis_title="Jugadores", yaxis_title="Puntos", showlegend=False)
-            fig.update_traces(textposition='outside')
-            st.plotly_chart(fig, use_container_width=True)
-    else:
-        st.warning("⚠️ No se detectaron participantes con el formato correcto en las columnas H a AF de la fila 1.")
-        
-    st.markdown("---")
+    # Distribución en pantalla (Tabla izquierda, Gráfica derecha)
+    col_tabla, col_grafica = st.columns([1, 1.2])
     
-    with st.expander("🔍 Ver Matriz Completa de la Quiniela (Datos del Excel)"):
-        df_completo = pd.read_excel(archivo, sheet_name='FIFA WORLD CUP MEXICO 2026')
-        st.dataframe(df_completo)
+    with col_tabla:
+        st.subheader("📋 Tabla de Posiciones")
+        st.dataframe(
+            df_posiciones, 
+            use_container_width=True,
+            column_config={
+                "Puntos": st.column_config.NumberColumn("Aciertos Totales", format="%d ⭐")
+            }
+        )
+        
+    with col_grafica:
+        st.subheader("📊 Rendimiento General")
+        fig = px.bar(
+            df_posiciones, 
+            x='Participante', 
+            y='Puntos',
+            color='Puntos',
+            color_continuous_scale='Blues',
+            text='Puntos'
+        )
+        fig.update_layout(xaxis_title="Jugadores", yaxis_title="Puntos", showlegend=False)
+        fig.update_traces(textposition='outside')
+        st.plotly_chart(fig, use_container_width=True)
 
 except FileNotFoundError:
     st.error(f"❌ No se encontró el archivo '{archivo}' en tu repositorio de GitHub.")
 except Exception as e:
-    st.error(f"⚡ Ocurrió un error al procesar el archivo: {e}")
+    st.error(f"⚡ Ocurrió un error inesperado: {e}")
