@@ -22,23 +22,29 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# Nombre del archivo tal como aparece en tu repositorio
-archivo = 'quiniela_actualizada_2026.xlsx'
+# NOMBRE DEL ARCHIVO EN TU REPOSITORIO
+archivo = 'QUINIELA WORLD CUP MEXICO 2026 FINAL.xlsx'
 
 try:
-    # Ajustado al nombre real de la hoja encontrada en el archivo: 'FIFA WORLD CUP MEXICO 2026'
+    # Cargamos el Excel indicando la hoja correcta
     df = pd.read_excel(archivo, sheet_name='FIFA WORLD CUP MEXICO 2026', header=None, dtype=str)
-    # Añade esto en la línea 28:
-    st.write("Datos leídos por el programa (fila de puntos):", df.iloc[2, 9:].tolist())
     
-    # Ajusta los índices de filas y columnas según la estructura de tu archivo familiar
-    nombres = df.iloc[1, 9:].tolist()
-    puntos = df.iloc[2, 9:].tolist()
+    # AJUSTE DE POSICIÓN SEGÚN TU IMAGEN:
+    # Nombres en la fila índice 1 (Fila 2 de Excel)
+    # Puntos en la fila índice 2 (Fila 3 de Excel)
+    # Empezando desde la columna índice 8 (Columna I de Excel)
+    nombres = df.iloc[1, 8:].tolist()
+    puntos = df.iloc[2, 8:].tolist()
     
     datos = []
     for n, p in zip(nombres, puntos):
         nombre_limpio = str(n).strip()
-        punto_limpio = int(p) if str(p).isdigit() else 0
+        # Convertimos a numérico, manejando posibles celdas vacías o nulas
+        try:
+            punto_limpio = int(float(p))
+        except:
+            punto_limpio = 0
+            
         if nombre_limpio and nombre_limpio != 'nan':
             datos.append({'Participante': nombre_limpio, 'Puntos': punto_limpio})
             
@@ -51,7 +57,6 @@ try:
     # PODIO JERÁRQUICO
     c1, c2, c3 = st.columns(3)
     
-    # 1er Lugar
     c1.markdown(f"""
         <div class='podium-card'>
             <div style='font-size: 14px; color: #FFD700;'>🥇 1ER LUGAR</div>
@@ -60,7 +65,6 @@ try:
         </div>
     """, unsafe_allow_html=True)
     
-    # 2do Lugar
     c2.markdown(f"""
         <div class='podium-card'>
             <div style='font-size: 14px; color: #C0C0C0;'>🥈 2DO LUGAR</div>
@@ -69,7 +73,6 @@ try:
         </div>
     """, unsafe_allow_html=True)
     
-    # 3er Lugar
     c3.markdown(f"""
         <div class='podium-card'>
             <div style='font-size: 14px; color: #CD7F32;'>🥉 3ER LUGAR</div>
