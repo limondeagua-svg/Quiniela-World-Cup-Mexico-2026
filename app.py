@@ -23,7 +23,7 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # Nombre del archivo tal como aparece en tu repositorio
-archivo = 'QUINIELA WORLD CUP MEXICO 2026 FINAL.xlsx'
+archivo = 'quiniela_world_cup_mexico_2026.xlsx'
 
 try:
     # Ajustado al nombre real de la hoja encontrada en el archivo: 'FIFA WORLD CUP MEXICO 2026'
