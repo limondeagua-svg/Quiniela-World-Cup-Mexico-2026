@@ -11,35 +11,32 @@ st.markdown("---")
 archivo = 'QUINIELA WORLD CUP MEXICO 2026 FINAL.xlsx'
 
 try:
-    # Leemos el Excel usando la fila 1 como el encabezado real (donde están Paty, Fer, David...)
+    # Leemos el Excel usando la fila 1 como encabezado (donde están tus columnas de juego)
     df_excel = pd.read_excel(archivo, sheet_name='FIFA WORLD CUP MEXICO 2026', header=1)
     
-    # Lista exacta de tus 11 participantes reales
-    participantes_reales = ['Paty', 'Fer Marin', 'Armandin', 'Yayo', 'David', 'SAM', 'Yaya', 'JORGE', 'Teté', 'Ivan', 'Brenda']
-    
-    # Extraemos los nombres y sus respectivos puntos (que están en la primera fila de datos, índice 0)
     nombres_finales = []
     puntos_finales = []
     
-    for nombre in participantes_reales:
-        if nombre in df_excel.columns:
-            nombres_finales.append(nombre)
-            # El valor de los aciertos está en la fila 0 de los datos de esa columna
-            valor_puntos = df_excel.loc[0, nombre]
+    # Recorremos cada columna del Excel para buscar a tus participantes
+    for col in df_excel.columns:
+        # Si la columna contiene el nombre de alguien o coincide con tu formato del Excel
+        if any(p in str(col) for p in ['David', 'Teté', 'Paty', 'SAM', 'Yaya', 'Yayo', 'Fer Marin', 'Armandin', 'JORGE', 'Ivan', 'Brenda']):
+            nombres_finales.append(str(col)) # Guardamos el nombre completo original (ej: "1/David")
+            valor_puntos = df_excel.loc[0, col]
             puntos_finales.append(int(valor_puntos) if pd.notna(valor_puntos) else 0)
 
-    # 2. Creamos el DataFrame de posiciones ordenadas de mayor a menor
+    # 2. Creamos el DataFrame de posiciones ordenadas
     df_posiciones = pd.DataFrame({
         'Participante': nombres_finales,
         'Puntos': puntos_finales
     }).sort_values(by='Puntos', ascending=False).reset_index(drop=True)
     
-    # Identificamos al líder real y los datos clave
+    # Identificamos al líder real
     lider_actual = df_posiciones.loc[0, 'Participante']
     puntos_lider = df_posiciones.loc[0, 'Puntos']
     cant_participantes = len(df_posiciones)
     
-    # 3. INTERFAZ VISUAL EN STREAMLIT (Tarjetas profesionales)
+    # 3. INTERFAZ VISUAL EN STREAMLIT
     st.subheader("📊 Estado del Campeonato")
     col1, col2, col3 = st.columns(3)
     
