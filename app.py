@@ -4,7 +4,7 @@ import plotly.express as px
 
 st.set_page_config(layout="wide", page_title="Quiniela Familiar 2026")
 
-# ESTILO CSS (Modo Oscuro con Podio Jerárquico)
+# ESTILO CSS
 st.markdown("""
     <style>
         .stApp { background-color: #0e1117; }
@@ -22,8 +22,8 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# CARGA DE DATOS
-archivo = 'Copa del Mundo-2026 trabajo.xlsx' 
+# AQUÍ ESTÁ EL CAMBIO CON EL NOMBRE CORRECTO
+archivo = 'QUINIELA WORLD CUP MEXICO 2026 FINAL.xlsx'
 
 try:
     df = pd.read_excel(archivo, sheet_name='FIFA 2026', header=None, dtype=str)
@@ -40,14 +40,12 @@ try:
     df_ranking = pd.DataFrame(datos).sort_values(by='Puntos', ascending=False).reset_index(drop=True)
     df_ranking.index += 1
 
-    # TÍTULO
     st.title("🏆 QUINIELA FAMILIAR - WORLD CUP 2026")
     st.markdown("---")
     
     # PODIO JERÁRQUICO
     c1, c2, c3 = st.columns(3)
     
-    # 1er Lugar (Grande)
     c1.markdown(f"""
         <div class='podium-card'>
             <div style='font-size: 14px; color: #FFD700;'>🥇 1ER LUGAR</div>
@@ -56,7 +54,6 @@ try:
         </div>
     """, unsafe_allow_html=True)
     
-    # 2do Lugar (Mediano)
     c2.markdown(f"""
         <div class='podium-card'>
             <div style='font-size: 14px; color: #C0C0C0;'>🥈 2DO LUGAR</div>
@@ -65,7 +62,6 @@ try:
         </div>
     """, unsafe_allow_html=True)
     
-    # 3er Lugar (Pequeño)
     c3.markdown(f"""
         <div class='podium-card'>
             <div style='font-size: 14px; color: #CD7F32;'>🥉 3ER LUGAR</div>
@@ -92,4 +88,4 @@ try:
         st.plotly_chart(fig, use_container_width=True)
 
 except Exception as e:
-    st.error("Error al cargar el archivo. Asegúrate de que el nombre del archivo en el código coincida con el que subiste a GitHub.")
+    st.error(f"Error: No se encuentra el archivo '{archivo}'. Asegúrate de que el nombre sea exacto y esté en la raíz del repositorio.")
