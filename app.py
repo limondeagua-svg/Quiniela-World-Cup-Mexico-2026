@@ -25,18 +25,17 @@ def cargar_datos():
 
 df_ranking = cargar_datos()
 
-# 3. Estilos CSS (Modo oscuro total)
+# 3. Estilos CSS (Modo oscuro y jerarquía visual)
 st.markdown("""
     <style>
         .stApp { background-color: #0e1117; color: white; }
         .podium-card { background-color: #1c1f26; border: 2px solid #FFD700; padding: 20px; border-radius: 15px; text-align: center; color: white; margin: 10px; }
         
-        /* Ajuste para que la tabla parezca parte del tema oscuro */
         [data-testid="stDataFrame"] {
             border: 1px solid #333;
             background-color: #1c1f26;
         }
-        h1, h2, h3 { color: #FFD700 !important; }
+        h1, h2, h3, h4 { color: #FFD700 !important; }
     </style>
 """, unsafe_allow_html=True)
 
@@ -47,13 +46,36 @@ if st.button('🔄 Refrescar datos'):
     st.cache_data.clear()
     st.rerun()
 
-# 5. Podio
+# 5. Podio con jerarquía de tamaños
 st.markdown("---")
 c1, c2, c3 = st.columns(3)
 if len(df_ranking) >= 3:
-    c1.markdown(f"<div class='podium-card'>🥈 2DO<br><b>{df_ranking.iloc[1]['Participante']}</b><br>{df_ranking.iloc[1]['Puntos']} pts</div>", unsafe_allow_html=True)
-    c2.markdown(f"<div class='podium-card'>🥇 1ER<br><b>{df_ranking.iloc[0]['Participante']}</b><br>{df_ranking.iloc[0]['Puntos']} pts</div>", unsafe_allow_html=True)
-    c3.markdown(f"<div class='podium-card'>🥉 3ER<br><b>{df_ranking.iloc[2]['Participante']}</b><br>{df_ranking.iloc[2]['Puntos']} pts</div>", unsafe_allow_html=True)
+    # 2do Lugar (Tamaño intermedio)
+    c1.markdown(f"""
+        <div class='podium-card'>
+            <h4>🥈 2DO LUGAR</h4>
+            <h3>{df_ranking.iloc[1]['Participante']}</h3>
+            {df_ranking.iloc[1]['Puntos']} pts
+        </div>
+    """, unsafe_allow_html=True)
+    
+    # 1er Lugar (Tamaño más grande)
+    c2.markdown(f"""
+        <div class='podium-card'>
+            <h4>🥇 1ER LUGAR</h4>
+            <h1>{df_ranking.iloc[0]['Participante']}</h1>
+            {df_ranking.iloc[0]['Puntos']} pts
+        </div>
+    """, unsafe_allow_html=True)
+    
+    # 3er Lugar (Tamaño más pequeño)
+    c3.markdown(f"""
+        <div class='podium-card'>
+            <h4>🥉 3ER LUGAR</h4>
+            <h4>{df_ranking.iloc[2]['Participante']}</h4>
+            {df_ranking.iloc[2]['Puntos']} pts
+        </div>
+    """, unsafe_allow_html=True)
 
 st.markdown("---")
 
