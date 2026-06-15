@@ -31,6 +31,7 @@ df_ranking = pd.DataFrame(datos).sort_values(by='Puntos', ascending=False).reset
 
 # 4. Interfaz
 st.title("🏆 QUINIELA FAMILIAR - WORLD CUP 2026")
+st.write(f"Última vez que se leyó el Excel: {pd.to_datetime('now')}")
 
 if st.button('🔄 Refrescar datos'):
     st.cache_data.clear()
