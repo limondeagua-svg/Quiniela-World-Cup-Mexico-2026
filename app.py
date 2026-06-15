@@ -2,19 +2,16 @@ import streamlit as st
 import pandas as pd
 import plotly.express as px
 
+# 1. Configuración de página
 st.set_page_config(layout="wide", page_title="Quiniela 2026")
 
-# 1. Carga de datos
+# 2. Carga de datos
 @st.cache_data(ttl=60)
 def cargar_datos():
-    # Leemos el archivo
     df = pd.read_excel('quiniela_actualizada_2026.xlsx', sheet_name='FIFA WORLD CUP MEXICO 2026', header=None)
-    
-    # Extraemos nombres (fila 2, cols 7 a 17) y puntos (fila 3, cols 7 a 17)
     nombres = df.iloc[1, 7:18].astype(str).tolist()
     puntos = df.iloc[2, 7:18].tolist()
     
-    # Limpiamos datos
     data = []
     for i in range(len(nombres)):
         if nombres[i] != 'nan':
@@ -24,24 +21,45 @@ def cargar_datos():
                 p = 0
             data.append({'Participante': nombres[i], 'Puntos': p})
             
-    return pd.DataFrame(data).sort_values(by='Puntos', ascending=False)
+    return pd.DataFrame(data).sort_values(by='Puntos', ascending=False).reset_index(drop=True)
 
 df_ranking = cargar_datos()
 
-# 2. Interfaz
+# 3. Estilos CSS (El fondo negro y tarjetas del podio)
+st.markdown("""
+    <style>
+        .stApp { background-color: #0e1117; }
+        .podium-card { background-color: #1c1f26; border: 2px solid #FFD700; padding: 20px; border-radius: 15px; text-align: center; color: white; margin: 10px; }
+    </style>
+""", unsafe_allow_html=True)
+
+# 4. Interfaz
 st.title("🏆 QUINIELA FAMILIAR - WORLD CUP 2026")
 
-if st.button('🔄 Actualizar Datos'):
+if st.button('🔄 Refrescar datos'):
     st.cache_data.clear()
     st.rerun()
 
-# 3. Gráfica de Barras
-st.subheader("📈 Ranking de Puntos")
-fig = px.bar(df_ranking, x='Participante', y='Puntos', color='Puntos', 
-             color_continuous_scale='Viridis', text='Puntos')
-fig.update_layout(xaxis_title="Participante", yaxis_title="Puntos Totales")
-st.plotly_chart(fig, use_container_width=True)
+# 5. Podio
+st.markdown("---")
+c1, c2, c3 = st.columns(3)
+if len(df_ranking) >= 3:
+    c1.markdown(f"<div class='podium-card'>🥈 2DO<br><b>{df_ranking.iloc[1]['Participante']}</b><br>{df_ranking.iloc[1]['Puntos']} pts</div>", unsafe_allow_html=True)
+    c2.markdown(f"<div class='podium-card'>🥇 1ER<br><b>{df_ranking.iloc[0]['Participante']}</b><br>{df_ranking.iloc[0]['Puntos']} pts</div>", unsafe_allow_html=True)
+    c3.markdown(f"<div class='podium-card'>🥉 3ER<br><b>{df_ranking.iloc[2]['Participante']}</b><br>{df_ranking.iloc[2]['Puntos']} pts</div>", unsafe_allow_html=True)
 
-# 4. Tabla
-st.subheader("📋 Tabla General")
-st.dataframe(df_ranking, use_container_width=True, hide_index=True)
+st.markdown("---")
+
+# 6. Gráfica y Tabla
+col_graf, col_tab = st.columns([2, 1])
+
+with col_graf:
+    st.subheader("📈 Ranking de Puntos")
+    fig = px.bar(df_ranking, x='Participante', y='Puntos', color='Puntos', 
+                 color_continuous_scale='Viridis', text='Puntos')
+    fig.update_layout(xaxis_title="", yaxis_title="Puntos", paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)', font_color="white")
+    st.plotly_chart(fig, use_container_width=True)
+
+with col_tab:
+    st.subheader("📋 Tabla")
+    st.dataframe(df_ranking, use_container_width=True, hide_index=True)
