@@ -25,14 +25,18 @@ def cargar_datos():
 
 df_ranking = cargar_datos()
 
-# 3. Estilos CSS (Incluye ajuste para tabla)
+# 3. Estilos CSS (Modo oscuro total)
 st.markdown("""
     <style>
-        .stApp { background-color: #0e1117; }
+        .stApp { background-color: #0e1117; color: white; }
         .podium-card { background-color: #1c1f26; border: 2px solid #FFD700; padding: 20px; border-radius: 15px; text-align: center; color: white; margin: 10px; }
-        /* Ajuste para que la tabla sea más oscura */
-        div[data-testid="stDataFrame"] { background-color: #1c1f26; border: 1px solid #333; }
-        .stDataFrame { color: white; }
+        
+        /* Ajuste para que la tabla parezca parte del tema oscuro */
+        [data-testid="stDataFrame"] {
+            border: 1px solid #333;
+            background-color: #1c1f26;
+        }
+        h1, h2, h3 { color: #FFD700 !important; }
     </style>
 """, unsafe_allow_html=True)
 
@@ -58,7 +62,6 @@ col_graf, col_tab = st.columns([2, 1])
 
 with col_graf:
     st.subheader("📈 Ranking de Puntos")
-    # Usamos una escala de colores dorados (Gold)
     fig = px.bar(df_ranking, x='Participante', y='Puntos', color='Puntos', 
                  color_continuous_scale=['#FFD700', '#DAA520', '#B8860B'], text='Puntos')
     fig.update_layout(xaxis_title="", yaxis_title="Puntos", paper_bgcolor='rgba(0,0,0,0)', 
