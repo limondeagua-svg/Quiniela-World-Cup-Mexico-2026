@@ -3,131 +3,174 @@ import pandas as pd
 import plotly.express as px
 
 # 1. Configuración de página
-st.set_page_config(layout="wide", page_title="Ranking Mundial 2026", page_icon="🏆")
+st.set_page_config(layout="wide", page_title="Quiniela Familiar 2026 - Acumulado")
 
-@st.cache_data(ttl=60)
-def cargar_datos():
-    try:
-        # Cargamos el archivo
-        df = pd.read_excel('quiniela_actualizada_2026.xlsx', sheet_name='FIFA WORLD CUP MEXICO 2026', header=None)
-        
-        # --- EXTRACCIÓN SEGÚN TUS COORDENADAS ---
-        # Columna H a R es índice 7 a 18 en Python
-        nombres = df.iloc[1, 7:18].values
-        puntos = df.iloc[2, 7:18].values
-        prediccion_goles_usuarios = df.iloc[75, 7:18].values # Fila 76 (índice 75)
-        
-        # Total Goles Reales: Celda G76 -> Fila 76, Columna G (índice 75, 6)
-        try:
-            goles_reales = int(float(df.iloc[75, 6]))
-        except:
-            goles_reales = 0
-        
-        data = []
-        for i in range(len(nombres)):
-            nombre_str = str(nombres[i]).strip()
-            if nombre_str != 'nan' and nombre_str != '':
-                try:
-                    p = int(float(puntos[i]))
-                    g_pred = int(float(prediccion_goles_usuarios[i]))
-                except:
-                    p, g_pred = 0, 0
-                
-                # Criterio de desempate: diferencia absoluta
-                diferencia = abs(g_pred - goles_reales)
-                
-                data.append({
-                    'Participante': nombre_str, 
-                    'Puntos': p, 
-                    'Predicción Goles': g_pred,
-                    'Diferencia': diferencia
-                })
-        
-        df_res = pd.DataFrame(data)
-        
-        # --- LÓGICA DE RANKING ---
-        # 1. Puntos (Descendente)
-        # 2. Diferencia (Ascendente: el que tiene menos diferencia gana)
-        df_res = df_res.sort_values(
-            by=['Puntos', 'Diferencia'], 
-            ascending=[False, True]
-        ).reset_index(drop=True)
-        
-        df_res.index += 1 # Posición 1, 2, 3...
-        return df_res, goles_reales
-    except Exception as e:
-        st.error(f"Error al procesar el Excel: {e}")
-        return pd.DataFrame(), 0
-
-df_ranking, goles_totales_reales = cargar_datos()
-
-# 2. Estilos CSS (Modo Premium)
+# --- ESTILO CSS ---
 st.markdown("""
     <style>
-        .stApp { background-color: #0e1117; color: white; }
-        .podium-card { 
-            background: linear-gradient(145deg, #1c1f26, #252932); 
-            border: 1px solid #444; padding: 20px; border-radius: 15px; 
-            text-align: center; 
+        .stApp { background-color: #0e1117; }
+        .podium-card {
+            background-color: #1c1f26;
+            border: 2px solid #FFD700;
+            padding: 20px;
+            border-radius: 15px;
+            text-align: center;
+            color: white;
+            margin-bottom: 10px;
         }
-        .gold { border-top: 5px solid #FFD700; box-shadow: 0px 0px 15px rgba(255, 215, 0, 0.3); }
-        .silver { border-top: 5px solid #C0C0C0; }
-        .bronze { border-top: 5px solid #CD7F32; }
-        .pts { font-size: 32px; font-weight: bold; color: #FFD700; margin: 0; }
-        .tie { font-size: 14px; color: #888; }
-        h1, h3 { text-align: center; color: #FFD700 !important; }
+        h1, h2, h3 { color: #FFD700 !important; text-align: center; }
+        .stTable { color: white; }
+        [data-testid="stMetricValue"] { color: #FFD700 !important; font-size: 35px !important; }
     </style>
 """, unsafe_allow_html=True)
 
-st.title("🏆 QUINIELA WORLD CUP 2026")
-st.markdown(f"<h3 style='color: white !important;'>Total Goles Reales (G76): {goles_totales_reales}</h3>", unsafe_allow_html=True)
+# 2. CONFIGURACIÓN DE CARGA
+archivo = 'quiniela_actualizada_2026.xlsx'
+# Lista de pestañas a procesar (puedes agregar más en el futuro)
+pestañas_a_sumar = ['FIFA WORLD CUP MEXICO 2026', '16os']
+
+@st.cache_data(ttl=60)
+def cargar_datos_acumulados():
+    try:
+        xl = pd.ExcelFile(archivo)
+        resumen = {} # Diccionario para acumular: { 'Nombre': [puntos, goles_pred] }
+        total_goles_reales_acumulado = 0
+        
+        for hoja in pestañas_a_sumar:
+            if hoja in xl.sheet_names:
+                # Cargar hoja actual
+                df = pd.read_excel(archivo, sheet_name=hoja, header=None, dtype=str)
+                
+                # 1. Extraer Goles Reales (Celda G76 -> Fila 75, Col 6)
+                try:
+                    g_real = int(float(df.iloc[75, 6]))
+                    total_goles_reales_acumulado += g_real
+                except:
+                    pass # Si no hay datos en G76 de esa hoja, no suma nada
+
+                # 2. Identificar Participantes (Desde Columna H / Índice 7)
+                nombres = df.iloc[1, 7:].tolist()
+                puntos = df.iloc[2, 7:].tolist()
+                pred_goles = df.iloc[75, 7:].tolist() # Fila 76 para predicciones
+                
+                for i in range(len(nombres)):
+                    nombre = str(nombres[i]).strip()
+                    if nombre == 'nan' or not nombre:
+                        continue
+                    
+                    # Limpiar Puntos
+                    try: pts = int(float(puntos[i]))
+                    except: pts = 0
+                    
+                    # Limpiar Goles Predichos
+                    try: g_p = int(float(pred_goles[i]))
+                    except: g_p = 0
+                    
+                    # Acumular en el diccionario
+                    if nombre not in resumen:
+                        resumen[nombre] = {'Puntos': 0, 'Goles Predichos': 0}
+                    
+                    resumen[nombre]['Puntos'] += pts
+                    resumen[nombre]['Goles Predichos'] += g_p
+
+        # 3. Procesar Ranking final con Desempate
+        datos_lista = []
+        for nombre, valores in resumen.items():
+            dif = abs(valores['Goles Predichos'] - total_goles_reales_acumulado)
+            datos_lista.append({
+                'Participante': nombre,
+                'Puntos Totales': valores['Puntos'],
+                'Goles Predichos (Acum)': valores['Goles Predichos'],
+                'Diferencia Goles': dif
+            })
+            
+        df_final = pd.DataFrame(datos_lista)
+        # Ordenar por Puntos (Desc) y luego por Diferencia (Asc)
+        df_final = df_final.sort_values(by=['Puntos Totales', 'Diferencia Goles'], 
+                                       ascending=[False, True]).reset_index(drop=True)
+        df_final.index += 1
+        
+        return df_final, total_goles_reales_acumulado
+
+    except Exception as e:
+        st.error(f"Error procesando el archivo: {e}")
+        return pd.DataFrame(), 0
+
+# --- EJECUCIÓN ---
+df_ranking, goles_reales_total = cargar_datos_acumulados()
 
 if not df_ranking.empty:
-    # 3. Podio (Jerarquía Visual)
-    st.markdown("---")
-    c1, c2, c3 = st.columns([1, 1.2, 1])
+    st.title("🏆 QUINIELA FAMILIAR - ACUMULADO")
+    st.markdown("### Fases: Grupos + 16avos")
     
-    with c2: # 1ero
-        st.markdown(f"""<div class='podium-card gold'><h4>🥇 1ER LUGAR</h4><h2>{df_ranking.iloc[0]['Participante']}</h2>
-        <p class='pts'>{df_ranking.iloc[0]['Puntos']} pts</p>
-        <p class='tie'>Diferencia Goles: {df_ranking.iloc[0]['Diferencia']}</p></div>""", unsafe_allow_html=True)
-        
-    with c1: # 2do
-        if len(df_ranking) >= 2:
-            st.markdown(f"""<div class='podium-card silver' style='margin-top: 40px;'><h4>🥈 2DO LUGAR</h4><h3>{df_ranking.iloc[1]['Participante']}</h3>
-            <p class='pts'>{df_ranking.iloc[1]['Puntos']} pts</p>
-            <p class='tie'>Diferencia: {df_ranking.iloc[1]['Diferencia']}</p></div>""", unsafe_allow_html=True)
-            
-    with c3: # 3ro
-        if len(df_ranking) >= 3:
-            st.markdown(f"""<div class='podium-card bronze' style='margin-top: 60px;'><h4>🥉 3ER LUGAR</h4><h3>{df_ranking.iloc[2]['Participante']}</h3>
-            <p class='pts'>{df_ranking.iloc[2]['Puntos']} pts</p>
-            <p class='tie'>Diferencia: {df_ranking.iloc[2]['Diferencia']}</p></div>""", unsafe_allow_html=True)
-
+    # MÉTRICA GOLES
+    col_m1, col_m2 = st.columns(2)
+    col_m1.metric("Goles Reales Acumulados (G76)", goles_reales_total)
+    col_m2.metric("Líder de la Tabla", df_ranking.iloc[0]['Participante'])
+    
     st.markdown("---")
+    
+    # 3. PODIO
+    c1, c2, c3 = st.columns(3)
+    # 1er Lugar (Centro) - Cambiamos orden visual para que el 1er lugar destaque al centro
+    with c2:
+        st.markdown(f"""
+            <div class='podium-card' style='border-width: 4px; transform: scale(1.05);'>
+                <div style='font-size: 16px; color: #FFD700;'>🥇 1ER LUGAR</div>
+                <div style='font-size: 38px; font-weight: bold;'>{df_ranking.iloc[0]['Participante']}</div>
+                <div style='font-size: 22px; color: #FFD700;'>{df_ranking.iloc[0]['Puntos Totales']} pts</div>
+                <div style='font-size: 14px; color: #888;'>Dif. Goles: {df_ranking.iloc[0]['Diferencia Goles']}</div>
+            </div>
+        """, unsafe_allow_html=True)
+    
+    # 2do Lugar (Izquierda)
+    with c1:
+        if len(df_ranking) >= 2:
+            st.markdown(f"""
+                <div class='podium-card' style='margin-top: 20px;'>
+                    <div style='font-size: 14px; color: #C0C0C0;'>🥈 2DO LUGAR</div>
+                    <div style='font-size: 28px; font-weight: bold;'>{df_ranking.iloc[1]['Participante']}</div>
+                    <div style='font-size: 18px;'>{df_ranking.iloc[1]['Puntos Totales']} pts</div>
+                </div>
+            """, unsafe_allow_html=True)
+    
+    # 3er Lugar (Derecha)
+    with c3:
+        if len(df_ranking) >= 3:
+            st.markdown(f"""
+                <div class='podium-card' style='margin-top: 20px;'>
+                    <div style='font-size: 14px; color: #CD7F32;'>🥉 3ER LUGAR</div>
+                    <div style='font-size: 24px; font-weight: bold;'>{df_ranking.iloc[2]['Participante']}</div>
+                    <div style='font-size: 18px;'>{df_ranking.iloc[2]['Puntos Totales']} pts</div>
+                </div>
+            """, unsafe_allow_html=True)
 
-    # 4. Gráfico y Tabla
-    col_graf, col_tab = st.columns([2, 1])
+    st.markdown("<br>", unsafe_allow_html=True)
 
+    # 4. TABLA Y GRÁFICA
+    col_tab, col_graf = st.columns([1.2, 2])
+    
+    with col_tab:
+        st.subheader("📋 Tabla General")
+        st.dataframe(df_ranking, use_container_width=True, hide_index=False)
+        st.info("El desempate considera la cercanía al total acumulado de goles reales.")
+        
     with col_graf:
-        st.subheader("📊 Rendimiento por Participante")
-        fig = px.bar(df_ranking, x='Participante', y='Puntos', color='Puntos',
-                     text='Puntos', color_continuous_scale=['#4d3d00', '#FFD700'])
-        fig.update_layout(plot_bgcolor='rgba(0,0,0,0)', paper_bgcolor='rgba(0,0,0,0)', font_color="white")
+        st.subheader("📊 Rendimiento Acumulado")
+        fig = px.bar(df_ranking, x='Participante', y='Puntos Totales', 
+                     color='Puntos Totales',
+                     color_continuous_scale=['#4d3d00', '#FFD700'],
+                     text='Puntos Totales')
+        fig.update_layout(plot_bgcolor='rgba(0,0,0,0)', paper_bgcolor='rgba(0,0,0,0)',
+                          font_color="white", showlegend=False)
         st.plotly_chart(fig, use_container_width=True)
 
-    with col_tab:
-        st.subheader("📋 Tabla Oficial")
-        # Tabla con el desempate visible
-        st.dataframe(
-            df_ranking[['Participante', 'Puntos', 'Diferencia']], 
-            use_container_width=True
-        )
+else:
+    st.error("No se pudieron cargar los datos. Verifica el archivo Excel y los nombres de las pestañas.")
 
-# Botón de refresco
-if st.sidebar.button('🔄 Actualizar Datos'):
-    st.cache_data.clear()
-    st.rerun()
-
-st.sidebar.markdown("---")
-st.sidebar.info("📌 **Criterio de Desempate:** En caso de empate en puntos, el sistema posiciona mejor a quien tenga la menor diferencia respecto al total de goles reales.")
+# BOTÓN REFRESCAR EN SIDEBAR
+with st.sidebar:
+    st.image("https://upload.wikimedia.org/wikipedia/commons/thumb/a/a7/FIFA_World_Cup_2026_Logo.svg/1200px-FIFA_World_Cup_2026_Logo.svg.png", width=150)
+    if st.button("🔄 Sincronizar Datos"):
+        st.cache_data.clear()
+        st.rerun()
