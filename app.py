@@ -33,9 +33,7 @@ def cargar_datos_acumulados():
         resumen = {} 
         total_goles_reales_acumulado = 0
         
-        # Definimos las pestañas y dónde están sus datos de goles (índice de fila)
-        # 'FIFA WORLD CUP MEXICO 2026' -> Fila 76 (índice 75)
-        # '16os' -> Fila 20 (índice 19)
+        # Configuración: Hoja -> Índice de fila de goles (Fila Excel - 1)
         config_hojas = {
             'FIFA WORLD CUP MEXICO 2026': 75,
             '16os': 19
@@ -45,25 +43,24 @@ def cargar_datos_acumulados():
             if hoja not in xl.sheet_names:
                 continue
             
-            # Leer la hoja
             df = pd.read_excel(archivo, sheet_name=hoja, header=None, dtype=str)
             filas, columnas = df.shape
             
-            # 1. Extraer Goles Reales (Celda GXX -> Columna índice 6)
+            # 1. Goles Reales (Celda GXX -> Columna índice 6)
             if filas > fila_goles and columnas > 6:
                 try:
                     valor_g_real = df.iloc[fila_goles, 6]
-                    if pd.notna(valor_g_real):
+                    if pd.notna(valor_g_real) and str(valor_g_real).strip() != '':
                         total_goles_reales_acumulado += int(float(valor_g_real))
-                except Exception:
+                except:
                     pass
             
-            # 2. Extraer Participantes, Puntos y Predicciones
+            # 2. Participantes, Puntos y Predicciones
             if filas > 2 and columnas > 7:
                 nombres = df.iloc[1, 7:].tolist()
                 puntos = df.iloc[2, 7:].tolist()
                 
-                # Predicciones de goles en la fila correspondiente
+                # Predicciones de goles
                 if filas > fila_goles:
                     pred_goles = df.iloc[fila_goles, 7:].tolist()
                 else:
@@ -74,11 +71,9 @@ def cargar_datos_acumulados():
                     if nombre == 'nan' or not nombre or nombre == 'None':
                         continue
                     
-                    # Puntos
                     try: pts = int(float(puntos[i]))
                     except: pts = 0
                     
-                    # Predicción Goles
                     try: g_p = int(float(pred_goles[i]))
                     except: g_p = 0
                     
@@ -101,7 +96,6 @@ def cargar_datos_acumulados():
             
         df_final = pd.DataFrame(datos_lista)
         if not df_final.empty:
-            # Orden: 1. Más Puntos, 2. Menos Diferencia
             df_final = df_final.sort_values(by=['Puntos Totales', 'Diferencia Final'], 
                                            ascending=[False, True]).reset_index(drop=True)
             df_final.index += 1
@@ -120,7 +114,7 @@ if not df_ranking.empty:
     
     # MÉTRICAS SUPERIORES
     m1, m2, m3 = st.columns(3)
-    m1.metric("Goles Reales (Acumulado G76+G20)", goles_reales_total)
+    m1.metric("Goles Reales (Acumulado)", goles_reales_total)
     m2.metric("Puntaje Líder", f"{df_ranking.iloc[0]['Puntos Totales']} pts")
     m3.metric("Total Participantes", len(df_ranking))
     
@@ -145,17 +139,29 @@ if not df_ranking.empty:
 
     st.markdown("<br>", unsafe_allow_html=True)
 
-    # TABLA Y GRÁFICO
+    # TABLA Y GRÁFICA
     col_t, col_g = st.columns([1, 2])
     with col_t:
         st.subheader("📋 Clasificación General")
         st.dataframe(df_ranking[['Participante', 'Puntos Totales', 'Diferencia Final']], use_container_width=True)
         st.caption("Nota: La diferencia se calcula contra la suma de goles reales de ambas fases.")
+    
     with col_g:
         st.subheader("📊 Gráfico de Rendimiento")
-        fig = px.bar(df_ranking, x='Participante', y='Puntos Totales', color='Puntos Totales', 
-                     color_continuous_scale='Gold', text='Puntos Totales')
-        fig.update_layout(plot_bgcolor='rgba(0,0,0,0)', paper_bgcolor='rgba(0,0,0,0)', font_color="white")
+        # CORRECCIÓN AQUÍ: Usamos una lista de colores válida en lugar de solo 'Gold'
+        fig = px.bar(df_ranking, 
+                     x='Participante', 
+                     y='Puntos Totales', 
+                     color='Puntos Totales', 
+                     color_continuous_scale=['#4d3d00', '#FFD700', '#FFEA00'], # Escala de marrón a dorado
+                     text='Puntos Totales')
+        
+        fig.update_layout(
+            plot_bgcolor='rgba(0,0,0,0)', 
+            paper_bgcolor='rgba(0,0,0,0)', 
+            font_color="white",
+            coloraxis_showscale=False
+        )
         st.plotly_chart(fig, use_container_width=True)
 
 else:
